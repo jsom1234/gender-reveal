@@ -1,230 +1,424 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Math Quiz</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Random 3-of-5 Math Quiz</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f9fafb;
+    :root {
+      --accent: #2563eb;
+      --muted: #9ca3af;
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --dark: #111827;
+    }
+
+    /* Page layout */
+    html,body {
+      height: 100%;
       margin: 0;
-      height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
 
     .container {
-      background: white;
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      width: 90%;
-      max-width: 400px;
+      width: 94%;
+      max-width: 520px;
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.08);
+      padding: 28px;
       text-align: center;
+      position: relative;
+      overflow: visible;
     }
 
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
+    h1 { margin: 0 0 12px 0; font-size: 1.4rem; }
+    p { margin: 0 0 18px 0; color: #374151; }
+
+    /* Landing */
+    #start-screen {
+      transition: opacity 400ms ease, transform 400ms ease;
+    }
+    #start-screen.hidden {
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
     }
 
-    .question, #quiz-nav, #result-screen {
-      display: none;
+    /* Quiz area (starts hidden until Take Quiz clicked) */
+    #quiz { display: none; }
+
+    /* Single-question fade */
+    .question {
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 320ms ease, transform 320ms ease;
+      pointer-events: none;
+      display: none; /* keep out of flow when hidden */
+      text-align: left;
+    }
+    .question.visible {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
     }
 
+    .answers { margin-top: 12px; }
     .answers label {
       display: block;
-      margin: 0.5rem 0;
+      margin: 8px 0;
       cursor: pointer;
+      user-select: none;
     }
+    .answers input { margin-right: 10px; }
 
-    button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      padding: 0.7rem 1.2rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      margin: 0.5rem;
-      font-size: 1rem;
-      transition: background 0.2s;
-    }
-
-    button:disabled {
-      background: #9ca3af;
-      cursor: not-allowed;
-    }
-
-    button:hover:enabled {
-      background: #1e40af;
-    }
-
-    #result-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #111827;
-      color: white;
+    /* Nav buttons */
+    #quiz-nav {
+      margin-top: 18px;
       display: flex;
       justify-content: center;
       align-items: center;
-      flex-direction: column;
-      font-size: 1.5rem;
+      gap: 8px;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 150ms;
+    }
+    button:disabled {
+      background: var(--muted);
+      cursor: not-allowed;
+    }
+    #backBtn {
+      background: #e5e7eb;
+      color: #111827;
     }
 
-    #start-screen {
+    /* Result overlay (full screen, faded) */
+    #result-screen {
+      position: fixed;
+      inset: 0; /* top:0;right:0;bottom:0;left:0; */
+      background: rgba(17,24,39,0.92);
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 1rem;
+      justify-content: center;
+      flex-direction: column;
+      gap: 18px;
+      color: white;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 450ms ease;
+    }
+    #result-screen.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #result-screen h2 { margin: 0; font-size: 1.6rem; }
+    #result-screen p { margin: 0; color: #e6edf3; }
+
+    /* Small responsive tweaks */
+    @media (max-width:420px) {
+      .container { padding: 20px; border-radius: 12px; }
+      button { padding: 9px 12px; font-size: 0.95rem; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" role="main" aria-labelledby="title">
+    <h1 id="title">Quick Randomised Quiz</h1>
 
-    <!-- Landing Page -->
-    <div id="start-screen">
-      <h1>Welcome to this page!</h1>
-      <p>Test your quick maths skills 🧮</p>
-      <button id="startBtn">Take Quiz</button>
+    <!-- START / Landing -->
+    <div id="start-screen" aria-hidden="false">
+      <p>Welcome to this page — test your quick maths skills!</p>
+      <button id="startBtn" aria-label="Take Quiz">Take Quiz</button>
     </div>
 
-    <!-- Quiz Questions -->
-    <div id="quiz">
-      <div class="question" id="q1">
-        <p>1️⃣ What is 2 + 2?</p>
-        <div class="answers">
-          <label><input type="radio" name="q1" value="3"> 3</label>
-          <label><input type="radio" name="q1" value="4"> 4</label>
-          <label><input type="radio" name="q1" value="5"> 5</label>
-        </div>
-      </div>
+    <!-- QUIZ (hidden until start) -->
+    <div id="quiz" aria-hidden="true" aria-live="polite">
+      <!-- Questions will be injected here -->
+      <div id="questions-wrapper"></div>
 
-      <div class="question" id="q2">
-        <p>2️⃣ What is 5 + 3?</p>
-        <div class="answers">
-          <label><input type="radio" name="q2" value="7"> 7</label>
-          <label><input type="radio" name="q2" value="8"> 8</label>
-          <label><input type="radio" name="q2" value="9"> 9</label>
-        </div>
-      </div>
-
-      <div class="question" id="q3">
-        <p>3️⃣ What is 10 + 5?</p>
-        <div class="answers">
-          <label><input type="radio" name="q3" value="14"> 14</label>
-          <label><input type="radio" name="q3" value="15"> 15</label>
-          <label><input type="radio" name="q3" value="16"> 16</label>
-        </div>
-      </div>
-
-      <!-- Navigation -->
-      <div id="quiz-nav">
-        <button id="backBtn">Back</button>
-        <button id="nextBtn" disabled>Next</button>
+      <!-- Nav -->
+      <div id="quiz-nav" aria-hidden="true">
+        <button id="backBtn" aria-label="Previous question">Back</button>
+        <button id="nextBtn" disabled aria-label="Next or Confirm">Next</button>
       </div>
     </div>
 
-    <!-- Result Screen -->
-    <div id="result-screen">
-      <h1 id="result-text"></h1>
+  </div>
+
+  <!-- RESULT overlay -->
+  <div id="result-screen" role="dialog" aria-modal="true" aria-hidden="true">
+    <h2 id="result-title"></h2>
+    <p id="result-sub"></p>
+    <div>
       <button id="restartBtn">Restart</button>
+      <button id="closeBtn">Close</button>
     </div>
   </div>
 
   <script>
+    /* ---------------------------
+       Question bank (5 sample Qs)
+       change these later as you like
+       Each option value must match the correctAnswer exactly
+       --------------------------- */
+    const questionBank = [
+      { q: 'What is 2 + 2?', options: ['3','4','5'], correct: '4' },
+      { q: 'What is 5 + 3?', options: ['7','8','9'], correct: '8' },
+      { q: 'What is 10 + 5?', options: ['14','15','16'], correct: '15' },
+      { q: 'What is 6 + 7?', options: ['12','13','14'], correct: '13' },
+      { q: 'What is 9 + 1?', options: ['9','10','11'], correct: '10' }
+    ];
+
+    // Elements
     const startBtn = document.getElementById('startBtn');
     const startScreen = document.getElementById('start-screen');
-    const quiz = document.getElementById('quiz');
-    const questions = document.querySelectorAll('.question');
+    const quizDiv = document.getElementById('quiz');
+    const questionsWrapper = document.getElementById('questions-wrapper');
     const nextBtn = document.getElementById('nextBtn');
     const backBtn = document.getElementById('backBtn');
     const quizNav = document.getElementById('quiz-nav');
+
     const resultScreen = document.getElementById('result-screen');
-    const resultText = document.getElementById('result-text');
+    const resultTitle = document.getElementById('result-title');
+    const resultSub = document.getElementById('result-sub');
     const restartBtn = document.getElementById('restartBtn');
+    const closeBtn = document.getElementById('closeBtn');
 
-    const correctAnswers = { q1: '4', q2: '8', q3: '15' };
-    let currentQuestion = 0;
+    // State
+    let selectedQuestions = []; // the 3 chosen objects
+    let currentIndex = 0;       // 0..2
+    let totalQuestions = 3;
 
-    // Start Quiz
-    startBtn.addEventListener('click', () => {
-      startScreen.style.display = 'none';
-      quiz.style.display = 'block';
-      showQuestion(currentQuestion);
-    });
-
-    // Show question by index
-    function showQuestion(index) {
-      questions.forEach(q => q.style.display = 'none');
-      questions[index].style.display = 'block';
-      quizNav.style.display = 'flex';
-      quizNav.style.justifyContent = 'center';
-
-      backBtn.style.display = index === 0 ? 'none' : 'inline-block';
-      nextBtn.disabled = !document.querySelector(`input[name="q${index + 1}"]:checked`);
-      nextBtn.textContent = index === questions.length - 1 ? 'Confirm' : 'Next';
+    /* Utility: pick n unique random items from array */
+    function pickRandom(arr, n) {
+      const copy = arr.slice();
+      const picked = [];
+      for (let i=0; i<n && copy.length>0; i++) {
+        const idx = Math.floor(Math.random() * copy.length);
+        picked.push(copy.splice(idx,1)[0]);
+      }
+      return picked;
     }
 
-    // Enable next button when answer selected
-    questions.forEach((q, index) => {
-      q.addEventListener('change', () => {
-        if (currentQuestion === index) {
-          nextBtn.disabled = false;
+    /* Build question DOM for chosen questions */
+    function buildQuestionsDom() {
+      questionsWrapper.innerHTML = '';
+      selectedQuestions.forEach((item, idx) => {
+        const qDiv = document.createElement('div');
+        qDiv.className = 'question';
+        qDiv.id = `q${idx+1}`;
+
+        const qP = document.createElement('p');
+        qP.innerHTML = `<strong>${idx+1}.</strong> ${escapeHtml(item.q)}`;
+        qDiv.appendChild(qP);
+
+        const answersDiv = document.createElement('div');
+        answersDiv.className = 'answers';
+
+        // each option
+        item.options.forEach((opt, oi) => {
+          const label = document.createElement('label');
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = `q${idx+1}`; // unique per question
+          input.value = opt;
+          input.id = `q${idx+1}_opt${oi}`;
+          label.htmlFor = input.id;
+          label.appendChild(input);
+          label.appendChild(document.createTextNode(' ' + opt));
+          answersDiv.appendChild(label);
+        });
+
+        qDiv.appendChild(answersDiv);
+        questionsWrapper.appendChild(qDiv);
+      });
+    }
+
+    /* Escape helper - small protection if you later put user content */
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    }
+
+    /* Show a particular question index with fade */
+    function showQuestion(index) {
+      const qs = document.querySelectorAll('.question');
+      qs.forEach((q, i) => {
+        if (i === index) {
+          q.classList.add('visible');
+          // ensure it's displayed so opacity transition can run
+          q.style.display = 'block';
+        } else {
+          // hide with transition, then set display none after transition
+          q.classList.remove('visible');
+          // after transition ends, set display none to keep only one in flow
+          setTimeout(() => { if (!q.classList.contains('visible')) q.style.display = 'none'; }, 360);
         }
       });
+
+      // Nav visibility / enable
+      backBtn.style.display = index === 0 ? 'none' : 'inline-block';
+      nextBtn.textContent = index === (totalQuestions-1) ? 'Confirm' : 'Next';
+
+      // If user already selected an answer for this question, enable Next; else disable
+      const selected = document.querySelector(`input[name="q${index+1}"]:checked`);
+      nextBtn.disabled = !selected;
+
+      // ensure nav is visible
+      quizNav.style.display = 'flex';
+    }
+
+    /* Start quiz: pick 3 random questions, build DOM, show first question with landing fade */
+    function startQuiz() {
+      // randomize
+      selectedQuestions = pickRandom(questionBank, totalQuestions);
+
+      // build UI
+      buildQuestionsDom();
+
+      // hide landing with CSS fade
+      startScreen.classList.add('hidden');
+
+      // after the landing fades (400ms), show quiz container and first question
+      setTimeout(() => {
+        quizDiv.style.display = 'block';
+        quizDiv.setAttribute('aria-hidden', 'false');
+        showQuestion(0);
+        currentIndex = 0;
+
+        // Give focus to first radio (if exists)
+        const firstRadio = document.querySelector('input[name="q1"]');
+        if (firstRadio) firstRadio.focus();
+      }, 420);
+    }
+
+    /* Evaluate answers and show result overlay (with fade) */
+    function showResults() {
+      let wrong = 0;
+      for (let i = 0; i < selectedQuestions.length; i++) {
+        const qKey = `q${i+1}`;
+        const sel = document.querySelector(`input[name="${qKey}"]:checked`);
+        if (!sel || sel.value !== selectedQuestions[i].correct) wrong++;
+      }
+
+      if (wrong === 0) {
+        resultTitle.textContent = "✅ You're correct!";
+        resultSub.textContent = "Perfect score — well done!";
+      } else {
+        resultTitle.textContent = `❌ You got ${wrong} question${wrong > 1 ? 's' : ''} wrong.`;
+        resultSub.textContent = `You answered ${selectedQuestions.length - wrong} out of ${selectedQuestions.length} correctly.`;
+      }
+
+      // fade-in overlay
+      resultScreen.classList.add('visible');
+      resultScreen.setAttribute('aria-hidden', 'false');
+
+      // optionally hide quiz underneath (but leave DOM intact)
+      // we keep quiz visible in background for quick restart, but you can hide it if preferred:
+      // quizDiv.style.display = 'none';
+    }
+
+    /* Restart: hide overlay, reset inputs and create new random set */
+    function restartQuiz() {
+      resultScreen.classList.remove('visible');
+      resultScreen.setAttribute('aria-hidden', 'true');
+
+      // clear previous radio selections
+      document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+
+      // re-randomize and rebuild
+      selectedQuestions = pickRandom(questionBank, totalQuestions);
+      buildQuestionsDom();
+
+      // show quiz area and first question
+      quizDiv.style.display = 'block';
+      showQuestion(0);
+      currentIndex = 0;
+    }
+
+    /* Close result: go back to landing screen (optional) */
+    function closeResultToLanding() {
+      resultScreen.classList.remove('visible');
+      resultScreen.setAttribute('aria-hidden', 'true');
+
+      // hide quiz and show landing (fade)
+      quizDiv.style.display = 'none';
+      startScreen.classList.remove('hidden');
+      startScreen.style.opacity = 1;
+      startScreen.style.transform = 'none';
+    }
+
+    /* Event wiring */
+    startBtn.addEventListener('click', startQuiz);
+
+    // Delegate change handler to questions wrapper: enables Next when a radio in current question chosen
+    questionsWrapper.addEventListener('change', (e) => {
+      if (e.target && e.target.matches('input[type="radio"]')) {
+        // if the changed radio belongs to the currently visible question -> enable next
+        const name = e.target.name;        // e.g. q1
+        const idx = parseInt(name.replace('q',''),10) - 1;
+        if (idx === currentIndex) nextBtn.disabled = false;
+      }
     });
 
-    // Next button
     nextBtn.addEventListener('click', () => {
-      if (currentQuestion < questions.length - 1) {
-        currentQuestion++;
-        showQuestion(currentQuestion);
+      if (currentIndex < totalQuestions - 1) {
+        currentIndex++;
+        showQuestion(currentIndex);
+        // focus first radio in next question (if present)
+        const r = document.querySelector(`input[name="q${currentIndex+1}"]`);
+        if (r) r.focus();
       } else {
+        // Confirm pressed -> show results overlay (fade)
         showResults();
       }
     });
 
-    // Back button
     backBtn.addEventListener('click', () => {
-      if (currentQuestion > 0) {
-        currentQuestion--;
-        showQuestion(currentQuestion);
+      if (currentIndex > 0) {
+        currentIndex--;
+        showQuestion(currentIndex);
       }
     });
 
-    // Show results
-    function showResults() {
-      let wrong = 0;
-      for (let key in correctAnswers) {
-        const selected = document.querySelector(`input[name="${key}"]:checked`);
-        if (!selected || selected.value !== correctAnswers[key]) {
-          wrong++;
-        }
-      }
-
-      resultText.textContent =
-        wrong === 0
-          ? "✅ You're correct!"
-          : `❌ You got ${wrong} question${wrong > 1 ? 's' : ''} wrong.`;
-
-      quiz.style.display = 'none';
-      resultScreen.style.display = 'flex';
-    }
-
-    // Restart quiz
     restartBtn.addEventListener('click', () => {
-      resultScreen.style.display = 'none';
-      document.querySelectorAll('input[type="radio"]').forEach(r => (r.checked = false));
-      currentQuestion = 0;
-      showQuestion(currentQuestion);
-      quiz.style.display = 'block';
+      restartQuiz();
     });
+
+    closeBtn.addEventListener('click', () => {
+      closeResultToLanding();
+    });
+
+    // Ensure keyboard accessibility: Enter on Next when enabled triggers click
+    nextBtn.addEventListener('keyup', (e) => {
+      if ((e.key === 'Enter' || e.key === ' ') && !nextBtn.disabled) nextBtn.click();
+    });
+
+    /* Safety: ensure nothing visible on load except landing */
+    (function init() {
+      quizDiv.style.display = 'none';
+      quizNav.style.display = 'none';
+      resultScreen.classList.remove('visible');
+      // startScreen visible by default (no questions generated yet)
+    })();
+
   </script>
 </body>
 </html>
