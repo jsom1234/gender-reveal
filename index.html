@@ -3,18 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mini Quiz</title>
+  <title>Math Quiz</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f9fafb;
+      margin: 0;
+      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
     }
-    .quiz-container {
+
+    .container {
       background: white;
       padding: 2rem;
       border-radius: 1rem;
@@ -23,18 +24,22 @@
       max-width: 400px;
       text-align: center;
     }
+
     h1 {
       font-size: 1.5rem;
       margin-bottom: 1rem;
     }
-    .question {
+
+    .question, #quiz-nav, #result-screen {
       display: none;
     }
+
     .answers label {
       display: block;
       margin: 0.5rem 0;
       cursor: pointer;
     }
+
     button {
       background: #2563eb;
       color: white;
@@ -42,90 +47,160 @@
       padding: 0.7rem 1.2rem;
       border-radius: 0.5rem;
       cursor: pointer;
-      margin-top: 1rem;
+      margin: 0.5rem;
       font-size: 1rem;
+      transition: background 0.2s;
     }
-    button:hover {
+
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    button:hover:enabled {
       background: #1e40af;
     }
-    .result {
-      font-size: 1.2rem;
-      margin-top: 1rem;
-      font-weight: bold;
+
+    #result-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #111827;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-size: 1.5rem;
+    }
+
+    #start-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
     }
   </style>
 </head>
 <body>
-  <div class="quiz-container">
-    <h1>Quick Maths Quiz 🧮</h1>
+  <div class="container">
 
-    <!-- Question 1 -->
-    <div class="question" id="q1">
-      <p>1️⃣ What is 2 + 2?</p>
-      <div class="answers">
-        <label><input type="radio" name="q1" value="3"> 3</label>
-        <label><input type="radio" name="q1" value="4"> 4</label>
-        <label><input type="radio" name="q1" value="5"> 5</label>
+    <!-- Landing Page -->
+    <div id="start-screen">
+      <h1>Welcome to this page!</h1>
+      <p>Test your quick maths skills 🧮</p>
+      <button id="startBtn">Take Quiz</button>
+    </div>
+
+    <!-- Quiz Questions -->
+    <div id="quiz">
+      <div class="question" id="q1">
+        <p>1️⃣ What is 2 + 2?</p>
+        <div class="answers">
+          <label><input type="radio" name="q1" value="3"> 3</label>
+          <label><input type="radio" name="q1" value="4"> 4</label>
+          <label><input type="radio" name="q1" value="5"> 5</label>
+        </div>
+      </div>
+
+      <div class="question" id="q2">
+        <p>2️⃣ What is 5 + 3?</p>
+        <div class="answers">
+          <label><input type="radio" name="q2" value="7"> 7</label>
+          <label><input type="radio" name="q2" value="8"> 8</label>
+          <label><input type="radio" name="q2" value="9"> 9</label>
+        </div>
+      </div>
+
+      <div class="question" id="q3">
+        <p>3️⃣ What is 10 + 5?</p>
+        <div class="answers">
+          <label><input type="radio" name="q3" value="14"> 14</label>
+          <label><input type="radio" name="q3" value="15"> 15</label>
+          <label><input type="radio" name="q3" value="16"> 16</label>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div id="quiz-nav">
+        <button id="backBtn">Back</button>
+        <button id="nextBtn" disabled>Next</button>
       </div>
     </div>
 
-    <!-- Question 2 -->
-    <div class="question" id="q2">
-      <p>2️⃣ What is 5 + 3?</p>
-      <div class="answers">
-        <label><input type="radio" name="q2" value="7"> 7</label>
-        <label><input type="radio" name="q2" value="8"> 8</label>
-        <label><input type="radio" name="q2" value="9"> 9</label>
-      </div>
+    <!-- Result Screen -->
+    <div id="result-screen">
+      <h1 id="result-text"></h1>
+      <button id="restartBtn">Restart</button>
     </div>
-
-    <!-- Question 3 -->
-    <div class="question" id="q3">
-      <p>3️⃣ What is 10 + 5?</p>
-      <div class="answers">
-        <label><input type="radio" name="q3" value="14"> 14</label>
-        <label><input type="radio" name="q3" value="15"> 15</label>
-        <label><input type="radio" name="q3" value="16"> 16</label>
-      </div>
-    </div>
-
-    <!-- Submit Button -->
-    <button id="submitBtn" style="display: none;">Submit</button>
-
-    <!-- Result -->
-    <div class="result" id="result"></div>
   </div>
 
   <script>
+    const startBtn = document.getElementById('startBtn');
+    const startScreen = document.getElementById('start-screen');
+    const quiz = document.getElementById('quiz');
     const questions = document.querySelectorAll('.question');
-    const submitBtn = document.getElementById('submitBtn');
-    const resultDiv = document.getElementById('result');
+    const nextBtn = document.getElementById('nextBtn');
+    const backBtn = document.getElementById('backBtn');
+    const quizNav = document.getElementById('quiz-nav');
+    const resultScreen = document.getElementById('result-screen');
+    const resultText = document.getElementById('result-text');
+    const restartBtn = document.getElementById('restartBtn');
+
+    const correctAnswers = { q1: '4', q2: '8', q3: '15' };
     let currentQuestion = 0;
 
-    const correctAnswers = {
-      q1: '4',
-      q2: '8',
-      q3: '15'
-    };
+    // Start Quiz
+    startBtn.addEventListener('click', () => {
+      startScreen.style.display = 'none';
+      quiz.style.display = 'block';
+      showQuestion(currentQuestion);
+    });
 
-    // Show first question
-    questions[currentQuestion].style.display = 'block';
+    // Show question by index
+    function showQuestion(index) {
+      questions.forEach(q => q.style.display = 'none');
+      questions[index].style.display = 'block';
+      quizNav.style.display = 'flex';
+      quizNav.style.justifyContent = 'center';
 
-    // Add event listeners to reveal next question
+      backBtn.style.display = index === 0 ? 'none' : 'inline-block';
+      nextBtn.disabled = !document.querySelector(`input[name="q${index + 1}"]:checked`);
+      nextBtn.textContent = index === questions.length - 1 ? 'Confirm' : 'Next';
+    }
+
+    // Enable next button when answer selected
     questions.forEach((q, index) => {
       q.addEventListener('change', () => {
-        if (index < questions.length - 1) {
-          questions[index + 1].style.display = 'block';
-        } else {
-          submitBtn.style.display = 'inline-block';
+        if (currentQuestion === index) {
+          nextBtn.disabled = false;
         }
       });
     });
 
-    // Submit and check answers
-    submitBtn.addEventListener('click', () => {
-      let wrong = 0;
+    // Next button
+    nextBtn.addEventListener('click', () => {
+      if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        showQuestion(currentQuestion);
+      } else {
+        showResults();
+      }
+    });
 
+    // Back button
+    backBtn.addEventListener('click', () => {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        showQuestion(currentQuestion);
+      }
+    });
+
+    // Show results
+    function showResults() {
+      let wrong = 0;
       for (let key in correctAnswers) {
         const selected = document.querySelector(`input[name="${key}"]:checked`);
         if (!selected || selected.value !== correctAnswers[key]) {
@@ -133,15 +208,22 @@
         }
       }
 
-      if (wrong === 0) {
-        resultDiv.textContent = "✅ You're correct!";
-        resultDiv.style.color = "green";
-      } else {
-        resultDiv.textContent = `❌ Sorry, you got ${wrong} question${wrong > 1 ? 's' : ''} wrong!`;
-        resultDiv.style.color = "red";
-      }
+      resultText.textContent =
+        wrong === 0
+          ? "✅ You're correct!"
+          : `❌ You got ${wrong} question${wrong > 1 ? 's' : ''} wrong.`;
 
-      submitBtn.style.display = 'none';
+      quiz.style.display = 'none';
+      resultScreen.style.display = 'flex';
+    }
+
+    // Restart quiz
+    restartBtn.addEventListener('click', () => {
+      resultScreen.style.display = 'none';
+      document.querySelectorAll('input[type="radio"]').forEach(r => (r.checked = false));
+      currentQuestion = 0;
+      showQuestion(currentQuestion);
+      quiz.style.display = 'block';
     });
   </script>
 </body>
